@@ -1,5 +1,7 @@
 # Flexiband API
 
+## USB Interface
+
 ### USB [Descriptors](http://www.beyondlogic.org/usbnutshell/usb5.shtml)
 
 The Flexiband USB3.0 device has one [Configuration](http://www.beyondlogic.org/usbnutshell/usb5.shtml#ConfigurationDescriptors) with one Interface. This Interface has three [AlternateSettings](http://www.beyondlogic.org/usbnutshell/usb5.shtml#InterfaceDescriptors) for different transfer rates.
@@ -7,7 +9,7 @@ The Interface always has the same [Isochronous Endpoint](http://www.beyondlogic.
 
 Endpoints are used to communicate with USB devices. See [USB Functions](http://www.beyondlogic.org/usbnutshell/usb3.shtml#USBFunctions). All USB devices have the Endpoint EP0 for [Control Transfers](http://www.beyondlogic.org/usbnutshell/usb4.shtml#Control). These Control Transfers can be used for [Standard Device Requests](http://www.beyondlogic.org/usbnutshell/usb6.shtml#StandardDeviceRequests) and for Vendor Requests. Control Transfers have a limited payload size and are only used to change settings or request status.
 
-The Flexiband also has the Endpoint EP3 for Isochronous Transfers. This Endpoint starts to produce data as soon as the Flexiband was started with the *"Start data transfer"* Vendor Request (see below).
+The Flexiband also has the Endpoint EP3 for Isochronous Transfers. This Endpoint starts to produce data as soon as the Flexiband was started with the *"Start data transfer"* Vendor Request (see below). For the data format see [Data Format](#data-format).
 
 ### USB Vendor Requests
 
@@ -251,3 +253,29 @@ The default value is applied on startup.
 
 Since FX3 build: 3  
 Since Atmel build: 14
+
+## Data Format
+
+### Framing
+
+Data frames are always 1024 bytes long. They contain a preamble, a 32-bit counter, payload data and padding to fill up the frame.
+
+The counter starts at zero when the flexiband is started with the *"Start data transfer"* Vendor Request. It increments with each frame. When the maximum value is reached is rolls over to zero.
+
+The padding is currently filled with 0x00 bytes. In a later version it might be used as CRC.
+
+<table>
+  <tr align="center"><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>...</td><td>m</td><td>...</td><td>1023</td></tr>
+  <tr><th colspan="2">PREAMBLE</th><th colspan="4">COUNTER</th><th colspan="3">PAYLOAD DATA</th><th colspan="3">PADDING</th></tr>
+  <tr align="center"><td>0x55</td><td>0xAA</td><td colspan="4">count</td><td colspan="3"> (up to 1014 bytes) </td><td colspan="3"> 0x00 </td></table>
+</table>
+
+### Payload
+
+The layout of the payload depends on the current FPGA configuration. Here are some examples:
+
+<table>
+  <tr align="center"><th>byte</th><td colspan="4">0</td><td colspan="4">1</td><td>...</td><td colspan="4">1014</td></tr>
+  <tr align="center"><th>I-3</th><td colspan="2">L5 I [7:4]</td><td colspan="2">L5 Q [3:0]</td><td colspan="2">L5 I [7:4]</td><td colspan="2">L5 Q [3:0]</td><td>...</td><td colspan="2">L5 I [7:4]</td><td colspan="2">L5 Q [3:0]</td></tr>
+  <tr align="center"><th>III-1a</th><td>L2 I [7:6]</td><td>L2 Q [5:4]</td><td>L1 I [3:2]</td><td>L1 Q [1:0]</td><td colspan="2">L5 I [7:4]</td><td colspan="2">L5 Q [3:0]</td><td>...</td><td colspan="2">L5 I [7:4]</td><td colspan="2">L5 Q [3:0]</td></tr>
+</table>
