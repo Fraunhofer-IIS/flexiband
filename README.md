@@ -279,3 +279,8 @@ The layout of the payload depends on the current FPGA configuration. Here are so
   <tr align="center"><th>I-3</th><td colspan="2">L5 I [7:4]</td><td colspan="2">L5 Q [3:0]</td><td colspan="2">L5 I [7:4]</td><td colspan="2">L5 Q [3:0]</td><td>...</td><td colspan="2">L5 I [7:4]</td><td colspan="2">L5 Q [3:0]</td></tr>
   <tr align="center"><th>III-1a</th><td>L2 I [7:6]</td><td>L2 Q [5:4]</td><td>L1 I [3:2]</td><td>L1 Q [1:0]</td><td colspan="2">L5 I [7:4]</td><td colspan="2">L5 Q [3:0]</td><td>...</td><td colspan="2">L5 I [7:4]</td><td colspan="2">L5 Q [3:0]</td></tr>
 </table>
+
+<table>
+<tr align="center"><th>byte</th><td colspan="4">0</td><td colspan="4">1</td><td colspan="4">2</td><td colspan="4">3</td><td>...</td><td colspan="4">1011</td></tr>
+  <tr align="center"><th>III-1b</th><td colspan="2">L2 I [7:4]</td><td colspan="2">L2 Q [3:0]</td><td colspan="2">L1 I [7:4]</td><td colspan="2">L1 Q [3:0]</td><td colspan="2">L5 I [7:4]</td><td colspan="2">L5 Q [3:0]</td><td colspan="2">L5 I [7:4]</td><td colspan="2">L5 Q [3:0]</td><td>...</td><td colspan="2">L5 I [7:4]</td><td colspan="2">L5 Q [3:0]</td></tr>
+</table>
