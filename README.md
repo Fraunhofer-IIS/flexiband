@@ -64,11 +64,13 @@ Since Atmel build: -
 
 ##### Load FPGA
 
-Load a bitstream into the FPGA. The bitstream has to be loaded page by page. Page loading is started by transferring the first page. Each page is 512 bytes. The last page has to have a &lt;len&gt; less than 512. If The bitstream size is a multiple of 512 bytes, send an additional page with &lt;len&gt;=0.
+Load a bitstream into the FPGA. The bitstream has to be loaded page by page. Page loading is started by transferring the first page. Each page is 512 bytes. Increment the page counter with every transfer.
+For the last page, issue a vendor request with wIndex=0xffff to finalize the upload.
 
 | bmRequestType | bRequest | wValue | wIndex | wLength | Data |
 |---------------|----------|--------|--------|---------|------|
 | 0x40          | 0x00     | 0xff00 | &lt;page&gt; | &lt;len&gt; | Data (512 byte) |
+| 0x40          | 0x00     | 0xff00 | 0xffff | 0 | - |
 
 ##### Hard reset
 
