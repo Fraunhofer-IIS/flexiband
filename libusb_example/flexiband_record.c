@@ -148,7 +148,8 @@ static void transfer_callback(struct libusb_transfer *transfer) {
 
 static int transfer_data(libusb_context *ctx, libusb_device_handle *dev_handle, int fd, uint64_t len) {
     int status = 0;
-    time_t start, last;
+    time_t start, last_time;
+    uint64_t last_bytes;
     struct transfer_ctrl ctrl;
     struct libusb_transfer *transfers[QUEUE_SIZE];
     memset(transfers, 0, sizeof(transfers));
@@ -193,7 +194,8 @@ static int transfer_data(libusb_context *ctx, libusb_device_handle *dev_handle, 
     }
 
     start = time(NULL);
-    last = start;
+    last_time = start;
+    last_bytes = 0;
     while (ctrl.transferred < ctrl.len && ctrl.status == 0 && !do_exit) {
         status = libusb_handle_events_completed(ctx, NULL);
         if (status) {
@@ -201,14 +203,15 @@ static int transfer_data(libusb_context *ctx, libusb_device_handle *dev_handle, 
             goto err_stop;
         }
         time_t now = time(NULL);
-        if (difftime(now, last) > 1.0) {
-            double dt = difftime(now, start);
-            printf("Throughput: %f MB/s\n", (double)ctrl.transferred / dt / (1024*1024));
-            last = now;
+        if (difftime(now, last_time) > 1.0) {
+            double dt = difftime(now, last_time);
+            printf("Throughput: %f MB/s\n", (double)(ctrl.transferred - last_bytes) / dt / (1000*1000));
+            last_time = now;
+            last_bytes = ctrl.transferred;
         }
     }
-    last = time(NULL);
-    printf("Throughput: %f MB/s\n", (double)ctrl.transferred / difftime(last, start) / (1024*1024));
+    time_t now = time(NULL);
+    printf("Throughput: %f MB/s\n", (double)ctrl.transferred / difftime(now, start) / (1000*1000));
  
 err_stop:
     printf("\n");
