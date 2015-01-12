@@ -20,7 +20,7 @@
 #define NUM_PKG 32
 #define XFER_LEN (NUM_PKG * PKG_LEN)
 #define TIMEOUT_MS 1000
-#define QUEUE_SIZE 2
+#define QUEUE_SIZE 4
 
 static bool do_exit = false;
 
