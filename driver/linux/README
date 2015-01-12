@@ -1,0 +1,7 @@
+1. Run install.sh as root
+ # sudo ./install.sh
+
+2. Add users to group "plugdev"
+ # sudo usermod USERNAME -a -G plugdev
+
+3. Reboot

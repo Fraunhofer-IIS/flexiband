@@ -1,0 +1,4 @@
+KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="add", ATTR{idVendor}=="27ae", ATTR{idProduct}=="1013", MODE="660", GROUP="plugdev", RUN+="/usr/local/bin/upload_fx3.sh /etc/TeleOrbit/teleorbit.img"
+KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="add", ATTR{idVendor}=="27ae", ATTR{idProduct}=="1014", MODE="660", GROUP="plugdev"
+KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="add", ATTR{idVendor}=="27ae", ATTR{idProduct}=="1015", MODE="660", GROUP="plugdev", RUN+="/usr/local/bin/upload_fx3.sh /etc/TeleOrbit/teleorbit.img"
+KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="add", ATTR{idVendor}=="27ae", ATTR{idProduct}=="1016", MODE="660", GROUP="plugdev"

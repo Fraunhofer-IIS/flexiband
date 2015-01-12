@@ -1,0 +1,174 @@
+; Installation INF for the TeleOrbit Generic USB Driver for Windows 7
+; Processor support for x86 based platforms.
+;
+; (c) Copyright 2012 TeleOrbit GmbH
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=USB
+ClassGUID={36FC9E60-C465-11CF-8056-444553540000}
+provider=%TUSB_Provider%
+CatalogFile=TUSB.cat
+DriverVer=02/06/2013,1.2.1.06
+
+[SourceDisksNames]
+1=%TUSB_Install%,,,
+
+[SourceDisksFiles]
+TUSB.sys = 1
+gtec_rffe_usb30.spt = 1
+
+[DestinationDirs]
+TUSB.Files.Ext = 10,System32\Drivers
+GTEC30.Files = 10,System32\TeleOrbit
+
+[ControlFlags]
+ExcludeFromSelect = *
+
+[Manufacturer]
+%TUSB_Provider%=Device,NT,NTx86
+
+;for all platforms
+[Device]
+%VID_27AE&PID_1011.DeviceDesc%=TUSB, USB\VID_27AE&PID_1011
+%VID_27AE&PID_1012.DeviceDesc%=TUSB, USB\VID_27AE&PID_1012
+
+%VID_27AE&PID_1013.DeviceDesc%=GTEC30, USB\VID_27AE&PID_1013
+%VID_27AE&PID_1014.DeviceDesc%=TUSB, USB\VID_27AE&PID_1014
+
+%VID_04B4&PID_4720.DeviceDesc%=TUSB, USB\VID_04B4&PID_4720
+
+;for windows 2000 non intel platforms
+[Device.NT]
+%VID_27AE&PID_1011.DeviceDesc%=TUSB, USB\VID_27AE&PID_1011
+%VID_27AE&PID_1012.DeviceDesc%=TUSB, USB\VID_27AE&PID_1012
+
+%VID_27AE&PID_1013.DeviceDesc%=GTEC30, USB\VID_27AE&PID_1013
+%VID_27AE&PID_1014.DeviceDesc%=TUSB, USB\VID_27AE&PID_1014
+
+%VID_04B4&PID_4720.DeviceDesc%=TUSB, USB\VID_04B4&PID_4720
+
+;for x86 platforms
+[Device.NTx86]
+%VID_27AE&PID_1011.DeviceDesc%=TUSB, USB\VID_27AE&PID_1011
+%VID_27AE&PID_1012.DeviceDesc%=TUSB, USB\VID_27AE&PID_1012
+
+%VID_27AE&PID_1013.DeviceDesc%=GTEC30, USB\VID_27AE&PID_1013
+%VID_27AE&PID_1014.DeviceDesc%=TUSB, USB\VID_27AE&PID_1014
+
+%VID_04B4&PID_4720.DeviceDesc%=TUSB, USB\VID_04B4&PID_4720
+
+[TUSB]
+CopyFiles=TUSB.Files.Ext
+AddReg=TUSB.AddReg
+
+[TUSB.HW]
+AddReg=TUSB.AddReg.Guid
+
+[TUSB.Services]
+Addservice = TUSB,2,TUSB.AddService
+
+[TUSB.NT]
+CopyFiles=TUSB.Files.Ext
+AddReg=TUSB.AddReg
+
+[TUSB.NT.HW]
+AddReg=TUSB.AddReg.Guid
+
+[TUSB.NT.Services]
+Addservice = TUSB,2,TUSB.AddService
+
+
+[TUSB.NTx86]
+CopyFiles=TUSB.Files.Ext
+AddReg=TUSB.AddReg
+
+[TUSB.NTx86.HW]
+AddReg=TUSB.AddReg.Guid
+
+[TUSB.NTx86.Services]
+Addservice = TUSB,2,TUSB.AddService
+
+
+[TUSB.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,TUSB.sys
+HKR,,DriverBase,,TUSB.sys
+HKR,"Parameters","MaximumTransferSize",0x10001,4096
+HKR,"Parameters","DebugLevel",0x10001,2
+HKR,,FriendlyName,,%TUSB_Description%
+
+[TUSB.AddService]
+DisplayName    = %TUSB_Description%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %10%\System32\Drivers\TUSB.sys
+AddReg         = TUSB.AddReg
+LoadOrderGroup = Base
+
+[TUSB.Files.Ext]
+TUSB.sys
+
+[TUSB.AddReg.Guid]
+HKR,,DriverGUID,,%TUSB.GUID%
+
+[GTEC30.Files]
+gtec_rffe_usb30.spt
+
+[GTEC30.NT]
+CopyFiles=TUSB.Files.Ext, GTEC30.Files, CoInstaller_CopyFiles
+AddReg=TUSB.AddReg
+
+[GTEC30.NT.HW]
+AddReg=GTEC30.AddReg.Guid
+
+[GTEC30.NT.Services]
+Addservice = TUSB, 0x00000002, TUSB.AddService
+
+[GTEC30.AddReg.Guid]
+HKR,,DriverGUID,,%TUSB.GUID%
+HKR,,DriverEXECSCRIPT,,%GTEC30.EXECSCRIPT%
+
+;-------------- WDF Coinstaller installation
+[SourceDisksFiles]
+WdfCoInstaller01009.dll=1 ; make sure the number matches with SourceDisksNames
+
+[DestinationDirs]
+CoInstaller_CopyFiles = 11
+
+[CYUSB3.NTx86.CoInstallers]
+AddReg=CoInstaller_AddReg
+CopyFiles=CoInstaller_CopyFiles
+
+[CoInstaller_CopyFiles]
+WdfCoInstaller01009.dll
+
+[CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller01009.dll,WdfCoInstaller"
+
+[TUSB.NTx86.Wdf]
+KmdfService = TUSB, TUSB_wdfsect
+
+[TUSB_wdfsect]
+KmdfLibraryVersion = 1.9
+
+
+[Strings]
+TUSB_Provider    = "TeleOrbit"
+TUSB_Company     = "TeleOrbit GmbH"
+TUSB_Description = "TeleOrbit Generic USB Driver"
+TUSB_DisplayName = "TeleOrbit USB Generic"
+TUSB_Install     = "TeleOrbit USB Driver Installation Disk"
+VID_XXXX&PID_XXXX.DeviceDesc="TeleOrbit USB Generic Driver"
+VID_27AE&PID_1011.DeviceDesc="TeleOrbit GTEC RFFE USB 1"
+VID_27AE&PID_1012.DeviceDesc="TeleOrbit GTEC RFFE USB 2"
+VID_27AE&PID_1013.DeviceDesc="TeleOrbit GTEC RFFE USB 3.0 Bootloader"
+VID_27AE&PID_1014.DeviceDesc="TeleOrbit GTEC RFFE USB 3.0"
+VID_04B4&PID_4720.DeviceDesc="Cypress USB BootProgrammer"
+
+TUSB.GUID="{CD7501A2-5176-4626-9DAA-EA114DBC66CD}"
+TUSB_Unused      = "."
+
+GTEC30.EXECSCRIPT="\systemroot\system32\TeleOrbit\gtec_rffe_usb30.spt"
