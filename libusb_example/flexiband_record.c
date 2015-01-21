@@ -10,6 +10,8 @@
 #include <sys/stat.h>
 #include <libusb-1.0/libusb.h>
 
+#include "libusb_version_fixes.h"
+
 #define INTERFACE     0
 #define ALT_INTERFACE 1
 
