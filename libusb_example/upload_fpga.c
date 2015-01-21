@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <libusb-1.0/libusb.h>
 
+#include "libusb_version_fixes.h"
+
 #define INTERFACE     0
 #define VID      0x27ae
 #define PID      0x1016
