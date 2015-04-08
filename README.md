@@ -237,7 +237,7 @@ The default value is applied on startup.
 
 * Bit0: Antenna Fault
 * Bit1: Antenna Supply
-* Bit3-4: Board Revision
+* Bit2-3: Board Revision (zero based, so add one to get the actual revision)
 
 | bmRequestType | bRequest | wValue | wIndex | wLength | Data |
 |---------------|----------|--------|--------|---------|------|
