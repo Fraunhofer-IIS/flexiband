@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <libusb-1.0/libusb.h>
@@ -124,16 +125,55 @@ err_ret:
     return status;
 }
 
+struct statistics {
+    int64_t min;
+    int64_t max;
+    int64_t sum;
+    int64_t num;
+};
+
 struct transfer_ctrl {
     uint64_t len;
     uint64_t transferred;
     unsigned pending;
     int fd;
     int status;
+    struct statistics usb;
+    struct statistics disk;
 };
 
+static int64_t now_usec() {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
+}
+
+static void init_statistics(struct statistics *stat) {
+    stat->min = INT64_MAX;
+    stat->max = 0;
+    stat->sum = 0;
+    stat->num = 0;
+}
+
+static void update_statistics(struct statistics *stat, int64_t duration) {
+    stat->min = duration < stat->min ? duration : stat->min;
+    stat->max = duration > stat->max ? duration : stat->max;
+    stat->sum += duration;
+    stat->num++;
+}
+
 static void transfer_callback(struct libusb_transfer *transfer) {
+    static int64_t start_usb = -1;
     struct transfer_ctrl *ctrl = (struct transfer_ctrl*)transfer->user_data;
+    if (ctrl == NULL) {
+        ctrl->status = -1;
+        return;
+    }
+
+    if (start_usb > 0) {
+        int64_t duration = now_usec() - start_usb;
+        update_statistics(&ctrl->usb, duration);
+    }
 
     // write current transfer to file
     ctrl->pending--;
@@ -144,7 +184,10 @@ static void transfer_callback(struct libusb_transfer *transfer) {
     }
     for (unsigned i = 0; i < transfer->num_iso_packets; i++) {
         if (transfer->iso_packet_desc[i].status != LIBUSB_TRANSFER_COMPLETED) continue;
+        long start = now_usec();
         write(ctrl->fd, libusb_get_iso_packet_buffer_simple(transfer, i), transfer->iso_packet_desc[i].actual_length);
+        long duration = now_usec() - start;
+        update_statistics(&ctrl->disk, duration);
         ctrl->transferred += transfer->iso_packet_desc[i].actual_length;
     }
 
@@ -152,13 +195,17 @@ static void transfer_callback(struct libusb_transfer *transfer) {
         ctrl->status = libusb_submit_transfer(transfer);
         if (ctrl->status) {
             fprintf(stderr, "Error: Submit transfer\n%s\n", libusb_strerror((enum libusb_error)ctrl->status));
+            return;
         }
         ctrl->pending++;
     }
+
+    start_usb = now_usec();
 }
 
 static int transfer_data(libusb_context *ctx, libusb_device_handle *dev_handle, int fd, uint64_t len) {
     int status = 0;
+    bool is_terminal = isatty(fileno(stdout));
     time_t start, last_time;
     uint64_t last_bytes;
     struct transfer_ctrl ctrl;
@@ -169,6 +216,8 @@ static int transfer_data(libusb_context *ctx, libusb_device_handle *dev_handle, 
     ctrl.pending = 0;
     ctrl.fd = fd;
     ctrl.status = 0;
+    init_statistics(&ctrl.disk);
+    init_statistics(&ctrl.usb);
 
     for (unsigned i = 0; i < QUEUE_SIZE; i++) {
         transfers[i] = libusb_alloc_transfer(NUM_PKG);
@@ -218,12 +267,19 @@ static int transfer_data(libusb_context *ctx, libusb_device_handle *dev_handle, 
         time_t now = time(NULL);
         if (difftime(now, last_time) > 1.0) {
             double dt = difftime(now, last_time);
-            printf("Throughput: %f MB/s\n", (double)(ctrl.transferred - last_bytes) / dt / (1000*1000));
+            if (is_terminal) printf("\33[2K\r");
+            printf("Throughput: %f MB/s, %lu MB / %lu MB  USB: min %lu us, max %lu us, avg %lu us  DISK: min %lu us, max %lu us, avg %lu us",
+                   (double)(ctrl.transferred - last_bytes) / dt / (1000*1000), ctrl.transferred / (1000*1000), ctrl.len / (1000*1000),
+                   ctrl.usb.min, ctrl.usb.max, ctrl.usb.sum / ctrl.usb.num, ctrl.disk.min, ctrl.disk.max, ctrl.disk.sum / ctrl.disk.num);
+            if (is_terminal) fflush(stdout); else printf("\n");
+            init_statistics(&ctrl.disk);
+            init_statistics(&ctrl.usb);
             last_time = now;
             last_bytes = ctrl.transferred;
         }
     }
     time_t now = time(NULL);
+    if (is_terminal) printf("\33[2K\r");
     printf("Throughput: %f MB/s\n", (double)ctrl.transferred / difftime(now, start) / (1000*1000));
  
 err_stop:
@@ -241,9 +297,13 @@ err_stop:
     if (status) {
         fprintf(stderr, "Error: Stop command\n%s\n", libusb_strerror((enum libusb_error)status));
     }
+
 err_alloc:
-    for (unsigned i = 0; i < QUEUE_SIZE; i++)
+    for (unsigned i = 0; i < QUEUE_SIZE; i++) {
+        free(transfers[i]->buffer);
         libusb_free_transfer(transfers[i]);
+    }
+
     return status;
 }
 
