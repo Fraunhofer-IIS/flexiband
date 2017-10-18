@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
         printf("Warning: Kernel driver active, detaching kernel driver...");
         status = libusb_detach_kernel_driver(dev_handle, INTERFACE);
         if (status) {
-            fprintf(stderr, "%s\n", libusb_strerror((enum libusb_error)status));
+            fprintf(stderr, "Detach: %s\n", libusb_strerror((enum libusb_error)status));
             goto err_dev;
         }
     }
@@ -84,19 +84,19 @@ int main(int argc, char *argv[]) {
     // endpoint halts cleared, toggles reset).
     status = libusb_set_configuration(dev_handle, CONFIGURATION);
     if (status) {
-        fprintf(stderr, "%s\n", libusb_strerror((enum libusb_error)status));
+        fprintf(stderr, "Reset: %s\n", libusb_strerror((enum libusb_error)status));
         goto err_dev;
     }
 
     status = libusb_claim_interface(dev_handle, INTERFACE);
     if (status) {
-        fprintf(stderr, "%s\n", libusb_strerror((enum libusb_error)status));
+        fprintf(stderr, "Claim interface: %s\n", libusb_strerror((enum libusb_error)status));
         goto err_dev;
     }
 
     status = libusb_set_interface_alt_setting(dev_handle, INTERFACE, ALT_INTERFACE);
     if (status) {
-        fprintf(stderr, "%s\n", libusb_strerror((enum libusb_error)status));
+        fprintf(stderr, "Set alternate interface: %s\n", libusb_strerror((enum libusb_error)status));
         goto err_intf;
     }
 
@@ -110,6 +110,7 @@ int main(int argc, char *argv[]) {
         goto err_intf;
     }
 
+    printf("Record %s...\n", filename);
     status = transfer_data(ctx, dev_handle, fd, len);
     close(fd);
 
@@ -137,6 +138,7 @@ static void transfer_callback(struct libusb_transfer *transfer) {
     // write current transfer to file
     ctrl->pending--;
     if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
+        fprintf(stderr, "Error: Transfer not completed, status %i\n", transfer->status);
         ctrl->status = transfer->status;
         return;
     }
@@ -192,7 +194,7 @@ static int transfer_data(libusb_context *ctx, libusb_device_handle *dev_handle, 
         goto err_alloc;
     }
 
-    // start all transfers but the last one
+    // start all transfers
     for (unsigned i = 0; i < QUEUE_SIZE; i++) {
         status = libusb_submit_transfer(transfers[i]);
         if (status) {
@@ -208,7 +210,9 @@ static int transfer_data(libusb_context *ctx, libusb_device_handle *dev_handle, 
     while (ctrl.transferred < ctrl.len && ctrl.status == 0 && !do_exit) {
         status = libusb_handle_events_completed(ctx, NULL);
         if (status) {
-            fprintf(stderr, "%s\n", libusb_strerror((enum libusb_error)status));
+            if (status != LIBUSB_ERROR_INTERRUPTED) {
+                fprintf(stderr, "Handle events: %s\n", libusb_strerror((enum libusb_error)status));
+            }
             goto err_stop;
         }
         time_t now = time(NULL);
