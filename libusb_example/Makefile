@@ -1,4 +1,4 @@
-APPS=flexiband_fpga flexiband_record
+APPS=flexiband_fpga flexiband_record flexiband_playback
 
 all: $(APPS)
 
