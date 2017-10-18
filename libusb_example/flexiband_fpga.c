@@ -1,8 +1,10 @@
+#include <endian.h>
 #include <errno.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 #include <libusb-1.0/libusb.h>
 
@@ -14,6 +16,7 @@
 
 static volatile bool do_exit = false;
 
+static int show_fpga_info(libusb_device_handle *dev_handle);
 static int upload_fpga(libusb_device_handle *dev_handle, const char *filename);
 
 // This will catch user initiated CTRL+C type events and allow the program to exit
@@ -29,10 +32,11 @@ int main(int argc, char *argv[]) {
     libusb_device_handle* dev_handle;
 
     if (argc < 2) {
-        printf("Usage: %s <filename>\n", argv[0]);
+        printf("Usage: %s [<filename>]      Upload a bit file to the FPGA\n", argv[0]);
+        printf("   or: %s -i                Show information about the current design\n", argv[0]);
         return 1;
     }
-    char *filename = argv[1];
+    char *option = argv[1];
 
     // Define signal handler to catch system generated signals
     // (If user hits CTRL+C, this will deal with it.)
@@ -64,11 +68,15 @@ int main(int argc, char *argv[]) {
 
     status = libusb_claim_interface(dev_handle, INTERFACE);
     if (status) {
-        fprintf(stderr, "%s\n", libusb_strerror((enum libusb_error)status));
+        fprintf(stderr, "Claim interface: %s\n", libusb_strerror((enum libusb_error)status));
         goto err_dev;
     }
 
-    status = upload_fpga(dev_handle, filename);
+    status = show_fpga_info(dev_handle);
+    if (strncmp(option, "-i", 2) != 0) {
+        status = upload_fpga(dev_handle, option);
+        status = show_fpga_info(dev_handle);
+    }
 
 err_dev:
     libusb_close(dev_handle);
@@ -78,12 +86,48 @@ err_ret:
     return status;
 }
 
+static const uint8_t VENDOR_IN = LIBUSB_ENDPOINT_IN | LIBUSB_RECIPIENT_DEVICE | LIBUSB_REQUEST_TYPE_VENDOR;
+static const uint8_t VENDOR_OUT = LIBUSB_ENDPOINT_OUT | LIBUSB_RECIPIENT_DEVICE | LIBUSB_REQUEST_TYPE_VENDOR;
+
+static int show_fpga_info(libusb_device_handle *dev_handle) {
+    int status = 0;
+
+    printf("Read FPGA info...\n");
+    uint16_t build_number;
+    status = libusb_control_transfer(dev_handle, VENDOR_IN, 0x03, 0x0001, 0x00, (unsigned char*)&build_number, sizeof(build_number), 1000);
+    if (status < 0) {
+        fprintf(stderr, "Error: Read FPGA build number\n%s\n", libusb_strerror((enum libusb_error)status));
+        goto err_ret;
+    }
+    uint32_t git_hash;
+    status = libusb_control_transfer(dev_handle, VENDOR_IN, 0x03, 0x0002, 0x00, (unsigned char*)&git_hash, sizeof(git_hash), 1000);
+    if (status < 0) {
+        fprintf(stderr, "Error: Read FPGA git hash\n%s\n", libusb_strerror((enum libusb_error)status));
+        goto err_ret;
+    }
+    uint32_t timestamp;
+    status = libusb_control_transfer(dev_handle, VENDOR_IN, 0x03, 0x0003, 0x00, (unsigned char*)&timestamp, sizeof(timestamp), 1000);
+    if (status < 0) {
+        fprintf(stderr, "Error: Read FPGA build time\n%s\n", libusb_strerror((enum libusb_error)status));
+        goto err_ret;
+    }
+
+    printf("  Build number: %i\n", be16toh(build_number));
+    printf("  Git hash: %08x\n", be32toh(git_hash));
+    struct tm year_2000 = { 0, 0, 0, 1, 1, 100, 0, 0, 0 };
+    time_t build_time_sec = be32toh(timestamp) + mktime(&year_2000);
+    printf("  Build time: %s\n", ctime(&build_time_sec));
+
+err_ret:
+    return status;
+}
+
 static int upload_fpga(libusb_device_handle *dev_handle, const char *filename) {
     int status = 0;
     FILE *fp = fopen(filename, "rb");
     if (fp == NULL) {
         fprintf(stderr, "Error: Open file %s\n%s\n", filename, strerror(errno));
-	return 1;
+        return 1;
     }
 
     fseek(fp, 0L, SEEK_END);
@@ -99,7 +143,7 @@ static int upload_fpga(libusb_device_handle *dev_handle, const char *filename) {
         unsigned char data[ep0_buf_size];
 
         size_t len = fread(data, sizeof(char), ep0_buf_size, fp);
-	status = libusb_control_transfer(dev_handle, LIBUSB_RECIPIENT_DEVICE | LIBUSB_REQUEST_TYPE_VENDOR, 0x00, 0xff00, page, data, len, 1000);
+        status = libusb_control_transfer(dev_handle, VENDOR_OUT, 0x00, 0xff00, page, data, len, 1000);
         if (status < 0) {
             printf("\n");
             fprintf(stderr, "Error: Upload FPGA config\n%s\n", libusb_strerror((enum libusb_error)status));
@@ -111,7 +155,7 @@ static int upload_fpga(libusb_device_handle *dev_handle, const char *filename) {
         }
         page++;
     }
-    status = libusb_control_transfer(dev_handle, LIBUSB_RECIPIENT_DEVICE | LIBUSB_REQUEST_TYPE_VENDOR, 0x00, 0xff00, 0xffff, NULL, 0, 1000);
+    status = libusb_control_transfer(dev_handle, VENDOR_OUT, 0x00, 0xff00, 0xffff, NULL, 0, 1000);
     if (status) {
         printf("\n");
         fprintf(stderr, "Error: Upload FPGA config\n%s\n", libusb_strerror((enum libusb_error)status));
