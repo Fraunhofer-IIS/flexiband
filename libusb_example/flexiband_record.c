@@ -12,6 +12,7 @@
 
 #include "libusb_version_fixes.h"
 
+#define CONFIGURATION 1
 #define INTERFACE     0
 #define ALT_INTERFACE 1
 
@@ -76,7 +77,12 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    status = libusb_reset_device(dev_handle);
+    // The operating system may or may not have already set an active configuration on the device.
+    // It is up to your application to ensure the correct configuration is selected before you
+    // attempt to claim interfaces and perform other operations.
+    // It will cause USB-related device state to be reset (altsetting reset to zero,
+    // endpoint halts cleared, toggles reset).
+    status = libusb_set_configuration(dev_handle, CONFIGURATION);
     if (status) {
         fprintf(stderr, "%s\n", libusb_strerror((enum libusb_error)status));
         goto err_dev;
