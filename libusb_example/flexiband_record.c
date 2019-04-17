@@ -24,7 +24,8 @@
 #define TIMEOUT_MS 1000
 #define QUEUE_SIZE 4
 
-static bool do_exit = false;
+// Signal handlers are only allowed to use volatile atomic variables
+static volatile sig_atomic_t do_exit = false;
 
 static int transfer_data(libusb_context *ctx, libusb_device_handle *dev_handle, int fd, uint64_t len);
 
