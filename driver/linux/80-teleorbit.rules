@@ -9,3 +9,11 @@ KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="remove", ENV
 KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="add", ATTR{idVendor}=="27ae", ATTR{idProduct}=="1017", MODE="660", GROUP="plugdev", RUN+="/usr/local/bin/upload_fx3.sh /etc/TeleOrbit/teleorbit.img"
 KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="add", ATTR{idVendor}=="27ae", ATTR{idProduct}=="1018", MODE="660", GROUP="plugdev", RUN+="/usr/bin/dbus-send --system /de/fraunhofer/iis/Flexiband de.fraunhofer.iis.Flexiband.DeviceAdded"
 KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="remove", ENV{PRODUCT}=="27ae/1018/100", RUN+="/usr/bin/dbus-send --system /de/fraunhofer/iis/Flexiband de.fraunhofer.iis.Flexiband.DeviceRemoved"
+# GTEC RFFE 2
+KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="add", ATTR{idVendor}=="27ae", ATTR{idProduct}=="1025", MODE="660", GROUP="plugdev", RUN+="/usr/local/bin/upload_fx3.sh /etc/TeleOrbit/teleorbit2.img"
+KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="add", ATTR{idVendor}=="27ae", ATTR{idProduct}=="1026", MODE="660", GROUP="plugdev", RUN+="/usr/bin/dbus-send --system /de/fraunhofer/iis/Flexiband de.fraunhofer.iis.Flexiband.DeviceAdded"
+KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="remove", ENV{PRODUCT}=="27ae/1016/100", RUN+="/usr/bin/dbus-send --system /de/fraunhofer/iis/Flexiband de.fraunhofer.iis.Flexiband.DeviceRemoved"
+# MGSE 2
+KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="add", ATTR{idVendor}=="27ae", ATTR{idProduct}=="1027", MODE="660", GROUP="plugdev", RUN+="/usr/local/bin/upload_fx3.sh /etc/TeleOrbit/teleorbit2.img"
+KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="add", ATTR{idVendor}=="27ae", ATTR{idProduct}=="1028", MODE="660", GROUP="plugdev", RUN+="/usr/bin/dbus-send --system /de/fraunhofer/iis/Flexiband de.fraunhofer.iis.Flexiband.DeviceAdded"
+KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="remove", ENV{PRODUCT}=="27ae/1018/100", RUN+="/usr/bin/dbus-send --system /de/fraunhofer/iis/Flexiband de.fraunhofer.iis.Flexiband.DeviceRemoved"
