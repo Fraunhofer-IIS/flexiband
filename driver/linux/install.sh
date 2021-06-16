@@ -32,13 +32,31 @@ if [ -f ${CYPRESS_CONFIG} ]; then
     if ! grep -w $'27ae\t1016\t\tTeleOrbit GTEC RFFE USB 3.0' ${CYPRESS_CONFIG}; then
         echo $'27ae\t1016\t\tTeleOrbit GTEC RFFE USB 3.0' >> ${CYPRESS_CONFIG}
     fi
+    if ! grep -w $'27ae\t1017\t\tTeleOrbit MGSE GTEC USB 3.0 Bootloader' ${CYPRESS_CONFIG}; then
+        echo $'27ae\t1017\t\tTeleOrbit MGSE GTEC USB 3.0 Bootloader' >> ${CYPRESS_CONFIG}
+    fi
+    if ! grep -w $'27ae\t1018\t\tTeleOrbit MGSE GTEC USB 3.0' ${CYPRESS_CONFIG}; then
+        echo $'27ae\t1018\t\tTeleOrbit MGSE GTEC USB 3.0' >> ${CYPRESS_CONFIG}
+    fi
+    if ! grep -w $'27ae\t1025\t\tTeleOrbit GTEC RFFE-2 USB 3.0 Bootloader' ${CYPRESS_CONFIG}; then
+        echo $'27ae\t1025\t\tTeleOrbit GTEC RFFE-2 USB 3.0 Bootloader' >> ${CYPRESS_CONFIG}
+    fi
+    if ! grep -w $'27ae\t1026\t\tTeleOrbit GTEC RFFE-2 USB 3.0' ${CYPRESS_CONFIG}; then
+        echo $'27ae\t1026\t\tTeleOrbit GTEC RFFE-2 USB 3.0' >> ${CYPRESS_CONFIG}
+    fi
+    if ! grep -w $'27ae\t1027\t\tTeleOrbit MGSE-2 GTEC USB 3.0 Bootloader' ${CYPRESS_CONFIG}; then
+        echo $'27ae\t1027\t\tTeleOrbit MGSE-2 GTEC USB 3.0 Bootloader' >> ${CYPRESS_CONFIG}
+    fi
+    if ! grep -w $'27ae\t1028\t\tTeleOrbit MGSE-2 GTEC USB 3.0' ${CYPRESS_CONFIG}; then
+        echo $'27ae\t1028\t\tTeleOrbit MGSE-2 GTEC USB 3.0' >> ${CYPRESS_CONFIG}
+    fi
     if ! grep -w $'27ae\t10C1\t\tFlexiband USB 3.0 Bootloader' ${CYPRESS_CONFIG}; then
         echo $'27ae\t10C1\t\tFlexiband USB 3.0 Bootloader' >> ${CYPRESS_CONFIG}
     fi
     if ! grep -w $'27ae\t10C2\t\tFlexiband USB 3.0' ${CYPRESS_CONFIG}; then
         echo $'27ae\t10C2\t\tFlexiband USB 3.0' >> ${CYPRESS_CONFIG}
     fi
-   
+
     # Re-add the closing tag </VPD>
     echo '</VPD>' >> ${CYPRESS_CONFIG}
 else
@@ -53,6 +71,11 @@ cp 80-teleorbit.rules /etc/udev/rules.d/80-teleorbit.rules
 cp src/fwload_fx3 ${TELEORBIT_BIN_PATH}/fwload_fx3
 cp upload_fx3.sh ${TELEORBIT_BIN_PATH}/upload_fx3.sh
 cp src/libcyusb.so ${TELEORBIT_LIB_PATH}/libcyusb.so
+cp src/flexiband_fpga ${TELEORBIT_BIN_PATH}/flexiband_fpga
+cp flexiband2_rec_I-1m.bit ${TELEORBIT_BIN_PATH}/flexiband2_rec_I-1m.bit
+cp flexiband2_setup.sh ${TELEORBIT_BIN_PATH}/flexiband2_setup.sh
 
 chmod +x ${TELEORBIT_BIN_PATH}/fwload_fx3
 chmod +x ${TELEORBIT_BIN_PATH}/upload_fx3.sh
+chmod +x ${TELEORBIT_BIN_PATH}/flexiband_fpga
+chmod +x ${TELEORBIT_BIN_PATH}/flexiband2_setup.sh
