@@ -39,6 +39,7 @@ int main(int argc, char *argv[]) {
     int status = LIBUSB_SUCCESS;
     int fd = -1;
     struct stat sb;
+    int setfl_flags;
     libusb_context *ctx;
     libusb_device_handle* dev_handle;
 
@@ -94,7 +95,13 @@ int main(int argc, char *argv[]) {
         goto err_intf;
     }
 
-    fd = open(filename, O_RDONLY | O_NOATIME /* | O_DIRECT */);
+    setfl_flags = O_RDONLY;
+
+#ifdef O_NOATIME
+    setfl_flags |= O_NOATIME;
+#endif
+
+    fd = open(filename, setfl_flags /* | O_DIRECT */);
     if (fd < 0) {
         fprintf(stderr, "Failed to open %s\n%s\n", filename, strerror(errno));
         status = 1;
