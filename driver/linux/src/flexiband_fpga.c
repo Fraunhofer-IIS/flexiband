@@ -251,6 +251,7 @@ static int upload_fpga(libusb_device_handle *dev_handle, const char *filename, b
             printf("Error handle event");
         }
 
+        libusb_free_transfer(xfr);
         usleep(100000); // TODO Check, if FPGA is ready
         printf("Done\n");
     }
