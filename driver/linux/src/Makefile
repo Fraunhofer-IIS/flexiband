@@ -4,9 +4,11 @@ all:
 	ln -sf libcyusb.so.1 libcyusb.so
 	g++ -o fwload_fx3 fwload_fx3.c -L . -l cyusb
 	gcc -o flexiband_fpga flexiband_fpga.c -I . -l usb-1.0
+	gcc -o flexiband_fpga_filter_selection flexiband_fpga_filter_selection.c -I . -l usb-1.0
 clean:
 	rm -f libcyusb.so libcyusb.so.1 libcyusb.o
 	rm -f fwload_fx3
 	rm -f flexiband_fpga
+	rm -f flexiband_fpga_filter_selection
 install:
 	@echo 'run ../install.sh'
