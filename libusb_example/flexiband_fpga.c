@@ -1,3 +1,12 @@
+/* libusb_example/flexiband_fpga.c
+ *
+ * DISCLAIMER: This file contains a subset of the functionalities
+ * provided by the flexiband_fpga application supplied in the
+ * driver packages. This example only covers the FPGA programming
+ * of the Flexiband board over Jtag, which is no longer supported
+ * in newer platforms like the Flexiband2.
+ */
+
 #include <endian.h>
 #include <errno.h>
 #include <signal.h>
