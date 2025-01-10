@@ -1,4 +1,3 @@
-#include <endian.h>
 #include <errno.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -10,6 +9,11 @@
 #include <libusb-1.0/libusb.h>
 
 #include "libusb_version_fixes.h"
+#ifdef __APPLE__
+#include "endian_darwin.h"
+#else
+#include <endian.h>
+#endif
 
 #define INTERFACE     0
 #define ALT_INTERFACE 4

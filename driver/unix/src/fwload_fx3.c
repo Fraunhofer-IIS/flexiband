@@ -17,8 +17,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <malloc.h>
-
+#include <stdlib.h>
 #include "cyusb.h"
 
 /********** Cut and paste the following & modify as required  **********/
