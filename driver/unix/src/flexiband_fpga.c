@@ -15,20 +15,33 @@
 #include <endian.h>
 #endif
 
+#define array_len(a) (sizeof(a) / sizeof(a[0]))
+
 #define INTERFACE     0
 #define ALT_INTERFACE 4
 #define ENDPOINT_OUT  0x03
 #define VID      0x27ae
-#define PIDS   { 0x1016, 0x1018, 0x1026, 0x1028 }
 #define MOD_CONFIG_LENGTH   31
 #define DAC_CONFIG_LENGTH   2
 
 static volatile bool do_exit = false;
 
-static const unsigned int PID[] = PIDS;
+/* List of all Product IDs which can be programmed using this application */
+static const unsigned int PID[] = {
+    0x1016, // TeleOrbit GTEC RFFE USB 3.0
+    0x1018, // TeleOrbit GTEC MGSE USB 3.0
+    0x1026, // TeleOrbit GTEC RFFE-2 USB 3.0
+    0x1028, // TeleOrbit GTEC MGSE-2 USB 3.0
+};
+/* List of all Product IDs which have to be programmed with the alternativ interface instead of jtag. */
+static const unsigned int ALTERNATIV_INTERFACE[] = {
+    0x1026, // TeleOrbit GTEC RFFE-2 USB 3.0
+    0x1028, // TeleOrbit GTEC MGSE-2 USB 3.0
+};
 
 static int show_fpga_info(libusb_device_handle *dev_handle);
-static int upload_fpga(libusb_device_handle *dev_handle, const char *filename, bool flexiband2);
+static int upload_fpga_jtag(libusb_device_handle *dev_handle, const char *filename);
+static int upload_fpga_alt(libusb_device_handle *dev_handle, const char *filename);
 static int send_mod_config(libusb_device_handle *dev_handle, char *mod_config_string, unsigned int mod_num);
 static int send_dac_config(libusb_device_handle *dev_handle, char *dac_config_string, unsigned int dac_num);
 static unsigned char reverse(unsigned char b);
@@ -44,7 +57,7 @@ int main(int argc, char *argv[]) {
     int status = LIBUSB_SUCCESS;
     libusb_context *ctx;
     libusb_device_handle *dev_handle;
-    bool is_flexiband2 = false;
+    bool is_alt_interface = false;
     char *mod_config_string1, *mod_config_string2, *dac_config_string1, *dac_config_string2;
 
     if (argc < 2) {
@@ -103,9 +116,11 @@ int main(int argc, char *argv[]) {
         goto err_ret;
     }
 
-    for (unsigned int i = 0; i < sizeof(PID); ++i) {
+    for (unsigned int i = 0; i < array_len(PID); ++i) {
         dev_handle = libusb_open_device_with_vid_pid(ctx, VID, PID[i]);
-        is_flexiband2 = (PID[i] == 0x1026 || PID[i] == 0x1028) ? true : false;
+        for (unsigned int j = 0; j < array_len(ALTERNATIV_INTERFACE); j++) {
+            if (PID[i] == ALTERNATIV_INTERFACE[j]) is_alt_interface = true;
+        }
         if (dev_handle != NULL) goto usb_ok;
     }
 
@@ -133,8 +148,7 @@ usb_ok:
     if (argc >= 4 && strlen(argv[3]) == DAC_CONFIG_LENGTH * 2) status = send_dac_config(dev_handle, dac_config_string1, 1);
     if (argc >= 5) status = send_dac_config(dev_handle, dac_config_string1, 1);
     if (argc == 6) status = send_dac_config(dev_handle, dac_config_string2, 2);
-    status = upload_fpga(dev_handle, filename, is_flexiband2);
-    if (!is_flexiband2) status = show_fpga_info(dev_handle);
+    status = is_alt_interface ? upload_fpga_alt(dev_handle, filename) : upload_fpga_jtag(dev_handle, filename);
     if (argc >= 3) status = send_mod_config(dev_handle, mod_config_string1, 1);
     if (argc >= 4 && strlen(argv[3]) == MOD_CONFIG_LENGTH * 2) status = send_mod_config(dev_handle, mod_config_string2, 2);
 
@@ -182,7 +196,7 @@ err_ret:
     return status;
 }
 
-static int upload_fpga(libusb_device_handle *dev_handle, const char *filename, bool flexiband2) {
+static int upload_fpga_jtag(libusb_device_handle *dev_handle, const char *filename) {
     int status = 0;
     FILE *fp = fopen(filename, "rb");
     if (fp == NULL) {
@@ -195,72 +209,87 @@ static int upload_fpga(libusb_device_handle *dev_handle, const char *filename, b
     fseek(fp, 0L, SEEK_SET);
 
     printf("Upload FPGA configuration...\n");
-    if (!flexiband2) {
-        const unsigned ep0_buf_size = 512; // TODO read this from the USB descriptor
-        unsigned page = 0;
-        unsigned num_pages = (size - 1) / ep0_buf_size + 1;
+    const unsigned ep0_buf_size = 512; // TODO read this from the USB descriptor
+    unsigned page = 0;
+    unsigned num_pages = (size - 1) / ep0_buf_size + 1;
 
-        while (!feof(fp) && !do_exit) {
-            unsigned char data[ep0_buf_size];
+    while (!feof(fp) && !do_exit) {
+        unsigned char data[ep0_buf_size];
 
-            size_t len = fread(data, sizeof(char), ep0_buf_size, fp);
-            status = libusb_control_transfer(dev_handle, VENDOR_OUT, 0x00, 0xff00, page, data, len, 1000);
-            if (status < 0) {
-                printf("\n");
-                fprintf(stderr, "Error: Upload FPGA config\n%s\n", libusb_strerror((enum libusb_error)status));
-                goto err_ret;
-            }
-            if (page % 30 == 0) {
-                printf("%d%% .. ", page * 100 / num_pages);
-                fflush(stdout);
-            }
-            page++;
-        }
-        status = libusb_control_transfer(dev_handle, VENDOR_OUT, 0x00, 0xff00, 0xffff, NULL, 0, 1000);
-        if (status) {
+        size_t len = fread(data, sizeof(char), ep0_buf_size, fp);
+        status = libusb_control_transfer(dev_handle, VENDOR_OUT, 0x00, 0xff00, page, data, len, 1000);
+        if (status < 0) {
             printf("\n");
             fprintf(stderr, "Error: Upload FPGA config\n%s\n", libusb_strerror((enum libusb_error)status));
             goto err_ret;
         }
-        printf("100%%\n");
-
-        // wait until FPGA is loaded
-        sleep(1); // TODO Check, if FPGA is ready
-        printf("Done\n");
-    } else {
-        status = libusb_set_interface_alt_setting(dev_handle, INTERFACE, ALT_INTERFACE);
-        if (status) {
-            printf("ERROR: libusb_set_interface_alt_setting\n");
-            fprintf(stderr, "%s\n", libusb_strerror((enum libusb_error)status));
-            goto err_ret;
+        if (page % 30 == 0) {
+            printf("%d%% .. ", page * 100 / num_pages);
+            fflush(stdout);
         }
-
-        unsigned char data[size];
-        int len = (int)fread(data, sizeof(char), size, fp);
-
-        unsigned char data_reverse[size];
-        for (unsigned i = 0; i < size; i++) {
-            data_reverse[i] = reverse(data[i]);
-        }
-
-        struct libusb_transfer *xfr;
-        xfr = libusb_alloc_transfer(0);
-        libusb_fill_bulk_transfer(xfr, dev_handle, ENDPOINT_OUT, data_reverse, len, callbackUSBTransferComplete, NULL, 5000);
-
-        if (libusb_submit_transfer(xfr) < 0) {
-            printf("ERROR: libusb_submit_transfer\n");
-        }
-
-        if (libusb_handle_events(NULL) != LIBUSB_SUCCESS) {
-            printf("Error handle event");
-        }
-
-        libusb_free_transfer(xfr);
-        usleep(100000); // TODO Check, if FPGA is ready
-        printf("Done\n");
+        page++;
     }
+    status = libusb_control_transfer(dev_handle, VENDOR_OUT, 0x00, 0xff00, 0xffff, NULL, 0, 1000);
+    if (status) {
+        printf("\n");
+        fprintf(stderr, "Error: Upload FPGA config\n%s\n", libusb_strerror((enum libusb_error)status));
+        goto err_ret;
+    }
+    printf("100%%\n");
+
+    // wait until FPGA is loaded
+    sleep(1); // TODO Check, if FPGA is ready
+    printf("Done\n");
 
 err_ret:
+    fclose(fp);
+    return status;
+}
+
+static int upload_fpga_alt(libusb_device_handle *dev_handle, const char *filename) {
+    int status = 0;
+    FILE *fp = fopen(filename, "rb");
+    if (fp == NULL) {
+        fprintf(stderr, "Error: Open file %s\n%s\n", filename, strerror(errno));
+        return 1;
+    }
+
+    fseek(fp, 0L, SEEK_END);
+    long size = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+
+    printf("Upload FPGA configuration...\n");
+    status = libusb_set_interface_alt_setting(dev_handle, INTERFACE, ALT_INTERFACE);
+    if (status) {
+        printf("ERROR: libusb_set_interface_alt_setting\n");
+        fprintf(stderr, "%s\n", libusb_strerror((enum libusb_error)status));
+        fclose(fp);
+        return status;
+    }
+
+    unsigned char data[size];
+    int len = (int)fread(data, sizeof(char), size, fp);
+
+    unsigned char data_reverse[size];
+    for (unsigned i = 0; i < size; i++) {
+        data_reverse[i] = reverse(data[i]);
+    }
+
+    struct libusb_transfer *xfr;
+    xfr = libusb_alloc_transfer(0);
+    libusb_fill_bulk_transfer(xfr, dev_handle, ENDPOINT_OUT, data_reverse, len, callbackUSBTransferComplete, NULL, 5000);
+
+    if (libusb_submit_transfer(xfr) < 0) {
+        printf("ERROR: libusb_submit_transfer\n");
+    }
+
+    if (libusb_handle_events(NULL) != LIBUSB_SUCCESS) {
+        printf("Error handle event");
+    }
+
+    libusb_free_transfer(xfr);
+    usleep(100000); // TODO Check, if FPGA is ready
+    printf("Done\n");
     fclose(fp);
     return status;
 }
