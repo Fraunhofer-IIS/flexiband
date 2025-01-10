@@ -29,8 +29,8 @@ static const unsigned int PID[] = PIDS;
 
 static int show_fpga_info(libusb_device_handle *dev_handle);
 static int upload_fpga(libusb_device_handle *dev_handle, const char *filename, bool flexiband2);
-static int send_mod_config(libusb_device_handle *dev_handle,  unsigned char *mod_config_string, unsigned int mod_num);
-static int send_dac_config(libusb_device_handle *dev_handle,  unsigned char *dac_config_string, unsigned int dac_num);
+static int send_mod_config(libusb_device_handle *dev_handle, char *mod_config_string, unsigned int mod_num);
+static int send_dac_config(libusb_device_handle *dev_handle, char *dac_config_string, unsigned int dac_num);
 static unsigned char reverse(unsigned char b);
 static void callbackUSBTransferComplete(struct libusb_transfer *xfr);
 
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     libusb_context *ctx;
     libusb_device_handle *dev_handle;
     bool is_flexiband2 = false;
-    unsigned char *mod_config_string1, *mod_config_string2, *dac_config_string1, *dac_config_string2;
+    char *mod_config_string1, *mod_config_string2, *dac_config_string1, *dac_config_string2;
 
     if (argc < 2) {
         printf("Usage: %s <filename> [<mod_config1>] [<mod_config2>] [<dac_config1>] [<dac_config2>]\n", argv[0]);
@@ -265,23 +265,23 @@ err_ret:
     return status;
 }
 
-static int send_mod_config(libusb_device_handle *dev_handle, unsigned char *mod_config_string, unsigned int mod_num) {
+static int send_mod_config(libusb_device_handle *dev_handle, char *mod_config_string, unsigned int mod_num) {
     int status = 0;
-    unsigned char mod_config[MOD_CONFIG_LENGTH], *pos = mod_config_string;
+    char mod_config[MOD_CONFIG_LENGTH], *pos = mod_config_string;
     for (size_t i = 0; i < MOD_CONFIG_LENGTH; ++i) {
         sscanf(pos, "%2hhx", &mod_config[i]);
         pos += 2;
     }
     printf("Sending modulator %d configuration...\n", mod_num);
     for (int num = MOD_CONFIG_LENGTH - 1; num >= 0; num--) {
-        status = libusb_control_transfer(dev_handle, VENDOR_OUT, 0x0E, num, mod_num, mod_config + num, MOD_CONFIG_LENGTH/MOD_CONFIG_LENGTH, 0);
+        status = libusb_control_transfer(dev_handle, VENDOR_OUT, 0x0E, num, mod_num, (unsigned char *)(mod_config + num), MOD_CONFIG_LENGTH/MOD_CONFIG_LENGTH, 0);
         printf("%02x", *(mod_config + num));
     }
     printf("\nDone\n");
     return status;
 }
 
-static int send_dac_config(libusb_device_handle *dev_handle, unsigned char *dac_config_string, unsigned int dac_num) {
+static int send_dac_config(libusb_device_handle *dev_handle, char *dac_config_string, unsigned int dac_num) {
     int status = 0;
     uint32_t dac_config = strtoul(dac_config_string, NULL, 16);
     printf("Sending DAC %d configuration...\n%s\n", dac_num, dac_config_string);
