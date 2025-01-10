@@ -32,11 +32,13 @@ static const unsigned int PID[] = {
     0x1018, // TeleOrbit GTEC MGSE USB 3.0
     0x1026, // TeleOrbit GTEC RFFE-2 USB 3.0
     0x1028, // TeleOrbit GTEC MGSE-2 USB 3.0
+    0x10a2  // Innosense-v1 USB 3.0
 };
 /* List of all Product IDs which have to be programmed with the alternativ interface instead of jtag. */
 static const unsigned int ALTERNATIV_INTERFACE[] = {
     0x1026, // TeleOrbit GTEC RFFE-2 USB 3.0
     0x1028, // TeleOrbit GTEC MGSE-2 USB 3.0
+    0x10a1  // Innosense-v1 USB 3.0
 };
 
 static int show_fpga_info(libusb_device_handle *dev_handle);
