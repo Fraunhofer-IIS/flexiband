@@ -24,6 +24,15 @@
 #define MOD_CONFIG_LENGTH   31
 #define DAC_CONFIG_LENGTH   2
 
+// 0x0X Error state
+#define FPGA_STATE_ERROR 0x00
+#define FPGA_STATE_NO_PROGRAM 0x01
+// 0x1X Busy states
+#define FPGA_STATE_BUSY 0x10
+#define FPGA_STATE_FLASH_BUSY 0x11
+// 0xFX Idle states
+#define FPGA_STATE_IDLE 0xF0
+
 static volatile bool do_exit = false;
 
 /* List of all Product IDs which can be programmed using this application */
@@ -283,16 +292,41 @@ static int upload_fpga_alt(libusb_device_handle *dev_handle, const char *filenam
 
     if (libusb_submit_transfer(xfr) < 0) {
         printf("ERROR: libusb_submit_transfer\n");
+        goto cleanup;
     }
 
     if (libusb_handle_events(NULL) != LIBUSB_SUCCESS) {
         printf("Error handle event");
+        goto cleanup;
     }
-
-    libusb_free_transfer(xfr);
-    usleep(100000); // TODO Check, if FPGA is ready
+    // Check, of FPGA is ready
+    uint8_t flash_status;
+    for (int t = 0; t <= 100000; t++) {
+        status = libusb_control_transfer(dev_handle, VENDOR_IN, 0x00, 0x05, 0x00, (unsigned char*)&flash_status, sizeof(flash_status), 1000);
+        if (status < 0) {
+            fprintf(stderr, "Error: Read FPGA flash progress\n%s\n", libusb_strerror((enum libusb_error)status));
+            goto cleanup;
+        }
+        switch (flash_status)
+        {
+        case FPGA_STATE_FLASH_BUSY: // flashing still in progress
+            sleep(1);
+        case FPGA_STATE_BUSY: // FPGA is done with flashing but still busy e.g. initializing
+        case FPGA_STATE_IDLE: // idle
+            goto exit;
+        default:
+            //fprintf(stderr, "Error: FPGA flash status error\n");
+            sleep(100000); // keep default waiting for fpga in case flash_status is not implemented
+            goto cleanup;
+        }
+    }
+exit:
     printf("Done\n");
+cleanup:
+    libusb_free_transfer(xfr);
     fclose(fp);
+    libusb_release_interface(dev_handle, INTERFACE);
+    libusb_claim_interface(dev_handle, INTERFACE);
     return status;
 }
 
