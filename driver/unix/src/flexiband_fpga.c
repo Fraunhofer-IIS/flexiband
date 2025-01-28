@@ -162,6 +162,7 @@ usb_ok:
     status = is_alt_interface ? upload_fpga_alt(dev_handle, filename) : upload_fpga_jtag(dev_handle, filename);
     if (argc >= 3) status = send_mod_config(dev_handle, mod_config_string1, 1);
     if (argc >= 4 && strlen(argv[3]) == MOD_CONFIG_LENGTH * 2) status = send_mod_config(dev_handle, mod_config_string2, 2);
+    status = show_fpga_info(dev_handle);
 
 err_dev:
     libusb_close(dev_handle);
@@ -176,6 +177,55 @@ static const uint8_t VENDOR_OUT = LIBUSB_ENDPOINT_OUT | LIBUSB_RECIPIENT_DEVICE 
 
 static int show_fpga_info(libusb_device_handle *dev_handle) {
     int status = 0;
+
+    // check FPGA status
+    uint8_t fpga_state;
+    status |= libusb_control_transfer(dev_handle, VENDOR_IN, 0x00, 0x05, 0x00, (unsigned char*)&fpga_state, sizeof(fpga_state), 1000);
+    if (status < 0) {
+        fprintf(stderr, "Error: Read FPGA state\n%s\n", libusb_strerror((enum libusb_error)status));
+        goto err_ret;
+    }
+    switch (fpga_state)
+    {
+    // 0xFX Idle states
+    case FPGA_STATE_IDLE ... 0xFF:
+        break;
+    // 0x1X Busy states
+    case FPGA_STATE_FLASH_BUSY:
+        printf("Flash in progress\n");
+        // fallthrough
+    case FPGA_STATE_BUSY:
+        // fallthrough
+    case (FPGA_STATE_FLASH_BUSY + 1) ... (FPGA_STATE_IDLE - 1):
+        printf("FPGA is busy: waiting");
+        for (int i = 0; i < 3; i++) {
+            sleep(10);
+            printf(".");
+            status |= libusb_control_transfer(dev_handle, VENDOR_IN, 0x00, 0x05, 0x00, (unsigned char*)&fpga_state, sizeof(fpga_state), 1000);
+            if (status < 0) {
+                fprintf(stderr, "Error: Read FPGA state\n%s\n", libusb_strerror((enum libusb_error)status));
+                goto err_ret;
+            }
+            if (fpga_state >= FPGA_STATE_IDLE) break;
+        }
+        if (fpga_state < FPGA_STATE_IDLE) {
+            printf("Aborting!\n");
+            goto err_ret;
+        }
+        break;
+    // 0x0X Error state
+    case FPGA_STATE_NO_PROGRAM:
+        printf("Cannot read FPGA info: No image.\n");
+        // fallthrough
+    case FPGA_STATE_ERROR:
+        // fallthrough
+    case (FPGA_STATE_NO_PROGRAM + 1) ... (FPGA_STATE_BUSY - 1):
+        // fallthrough
+    default:
+        goto err_ret;
+        break;
+    }
+    printf("Done!\n");
 
     printf("Read FPGA info...\n");
     uint16_t build_number;
@@ -311,7 +361,9 @@ static int upload_fpga_alt(libusb_device_handle *dev_handle, const char *filenam
         {
         case FPGA_STATE_FLASH_BUSY: // flashing still in progress
             sleep(1);
+            break;
         case FPGA_STATE_BUSY: // FPGA is done with flashing but still busy e.g. initializing
+            // fallthrough
         case FPGA_STATE_IDLE: // idle
             goto exit;
         default:
