@@ -50,7 +50,7 @@ static const unsigned int ALTERNATIV_INTERFACE[] = {
     0x10a1  // Innosense-v1 USB 3.0
 };
 
-static int show_fpga_info(libusb_device_handle *dev_handle);
+static int show_fpga_info(libusb_device_handle *dev_handle, bool flexiband2_api);
 static int upload_fpga_jtag(libusb_device_handle *dev_handle, const char *filename);
 static int upload_fpga_alt(libusb_device_handle *dev_handle, const char *filename);
 static int send_mod_config(libusb_device_handle *dev_handle, char *mod_config_string, unsigned int mod_num);
@@ -155,14 +155,14 @@ usb_ok:
         goto err_dev;
     }
 
-    status = show_fpga_info(dev_handle);
+    status = show_fpga_info(dev_handle, is_alt_interface);
     if (argc >= 4 && strlen(argv[3]) == DAC_CONFIG_LENGTH * 2) status = send_dac_config(dev_handle, dac_config_string1, 1);
     if (argc >= 5) status = send_dac_config(dev_handle, dac_config_string1, 1);
     if (argc == 6) status = send_dac_config(dev_handle, dac_config_string2, 2);
     status = is_alt_interface ? upload_fpga_alt(dev_handle, filename) : upload_fpga_jtag(dev_handle, filename);
     if (argc >= 3) status = send_mod_config(dev_handle, mod_config_string1, 1);
     if (argc >= 4 && strlen(argv[3]) == MOD_CONFIG_LENGTH * 2) status = send_mod_config(dev_handle, mod_config_string2, 2);
-    status = show_fpga_info(dev_handle);
+    status = show_fpga_info(dev_handle, is_alt_interface);
 
 err_dev:
     libusb_close(dev_handle);
@@ -175,7 +175,7 @@ err_ret:
 static const uint8_t VENDOR_IN = LIBUSB_ENDPOINT_IN | LIBUSB_RECIPIENT_DEVICE | LIBUSB_REQUEST_TYPE_VENDOR;
 static const uint8_t VENDOR_OUT = LIBUSB_ENDPOINT_OUT | LIBUSB_RECIPIENT_DEVICE | LIBUSB_REQUEST_TYPE_VENDOR;
 
-static int show_fpga_info(libusb_device_handle *dev_handle) {
+static int show_fpga_info(libusb_device_handle *dev_handle, bool flexiband2_api) {
     int status = 0;
 
     // check FPGA status
@@ -228,20 +228,24 @@ static int show_fpga_info(libusb_device_handle *dev_handle) {
     printf("Done!\n");
 
     printf("Read FPGA info...\n");
+    uint8_t fpga_register;
     uint16_t build_number;
-    status = libusb_control_transfer(dev_handle, VENDOR_IN, 0x03, 0x0001, 0x00, (unsigned char*)&build_number, sizeof(build_number), 1000);
+    fpga_register = flexiband2_api ? 0x03: 0x01;
+    status = libusb_control_transfer(dev_handle, VENDOR_IN, 0x03, fpga_register, 0x00, (unsigned char*)&build_number, sizeof(build_number), 1000);
     if (status < 0) {
         fprintf(stderr, "Error: Read FPGA build number\n%s\n", libusb_strerror((enum libusb_error)status));
         goto err_ret;
     }
     uint32_t git_hash;
-    status = libusb_control_transfer(dev_handle, VENDOR_IN, 0x03, 0x0002, 0x00, (unsigned char*)&git_hash, sizeof(git_hash), 1000);
+    fpga_register = flexiband2_api ? 0x01: 0x02;
+    status = libusb_control_transfer(dev_handle, VENDOR_IN, 0x03, fpga_register, 0x00, (unsigned char*)&git_hash, sizeof(git_hash), 1000);
     if (status < 0) {
         fprintf(stderr, "Error: Read FPGA git hash\n%s\n", libusb_strerror((enum libusb_error)status));
         goto err_ret;
     }
     uint32_t timestamp;
-    status = libusb_control_transfer(dev_handle, VENDOR_IN, 0x03, 0x0003, 0x00, (unsigned char*)&timestamp, sizeof(timestamp), 1000);
+    fpga_register = flexiband2_api ? 0x00: 0x03;
+    status = libusb_control_transfer(dev_handle, VENDOR_IN, 0x03, fpga_register, 0x00, (unsigned char*)&timestamp, sizeof(timestamp), 1000);
     if (status < 0) {
         fprintf(stderr, "Error: Read FPGA build time\n%s\n", libusb_strerror((enum libusb_error)status));
         goto err_ret;
