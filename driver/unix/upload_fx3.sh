@@ -1,5 +1,10 @@
 #!/bin/bash
 
-export LD_LIBRARY_PATH=/usr/local/lib/:/local/lib/:$LD_LIBRARY_PATH
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # Mac OSX
+    export DYLD_LIBRARY_PATH=/usr/local/lib/:/local/lib/:$DYLD_LIBRARY_PATH
+else
+    export LD_LIBRARY_PATH=/usr/local/lib/:/local/lib/:$LD_LIBRARY_PATH
+fi
 
 /usr/local/bin/fwload_fx3 -f $1
