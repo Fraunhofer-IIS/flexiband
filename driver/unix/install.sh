@@ -50,11 +50,21 @@ if [ -f ${CYPRESS_CONFIG} ]; then
     if ! grep -w $'27ae\t1028\t\tTeleOrbit MGSE-2 GTEC USB 3.0' ${CYPRESS_CONFIG}; then
         echo $'27ae\t1028\t\tTeleOrbit MGSE-2 GTEC USB 3.0' >> ${CYPRESS_CONFIG}
     fi
+
+    # Insert the non-existing Flexiband IDs
     if ! grep -w $'27ae\t10C1\t\tFlexiband USB 3.0 Bootloader' ${CYPRESS_CONFIG}; then
         echo $'27ae\t10C1\t\tFlexiband USB 3.0 Bootloader' >> ${CYPRESS_CONFIG}
     fi
     if ! grep -w $'27ae\t10C2\t\tFlexiband USB 3.0' ${CYPRESS_CONFIG}; then
         echo $'27ae\t10C2\t\tFlexiband USB 3.0' >> ${CYPRESS_CONFIG}
+    fi
+
+    # Insert the non-existing Innosense IDs
+    if ! grep -w $'27ae\t10A1\t\tInnosense-v1 USB 3.0 Bootloader' ${CYPRESS_CONFIG}; then
+        echo $'27ae\t10A1\t\tInnosense-v1 USB 3.0 Bootloader' >> ${CYPRESS_CONFIG}
+    fi
+    if ! grep -w $'27ae\t10A2\t\tInnosense-v1 USB 3.0' ${CYPRESS_CONFIG}; then
+        echo $'27ae\t10A2\t\tInnosense-v1 USB 3.0' >> ${CYPRESS_CONFIG}
     fi
 
     # Re-add the closing tag </VPD>
