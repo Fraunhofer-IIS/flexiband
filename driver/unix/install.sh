@@ -78,6 +78,7 @@ cp flexiband.img ${TELEORBIT_IMG_PATH}/flexiband.img
 cp teleorbit.img ${TELEORBIT_IMG_PATH}/teleorbit.img
 cp 80-flexiband.rules /etc/udev/rules.d/80-flexiband.rules
 cp 80-teleorbit.rules /etc/udev/rules.d/80-teleorbit.rules
+cp 80-innosense.rules /etc/udev/rules.d/80-innosense.rules
 cp src/fwload_fx3 ${TELEORBIT_BIN_PATH}/fwload_fx3
 cp upload_fx3.sh ${TELEORBIT_BIN_PATH}/upload_fx3.sh
 cp src/libcyusb.so ${TELEORBIT_LIB_PATH}/libcyusb.so
