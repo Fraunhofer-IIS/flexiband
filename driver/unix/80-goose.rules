@@ -1,0 +1,11 @@
+# GOOSE1
+KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="add", ATTR{idVendor}=="27ae", ATTR{idProduct}=="1102", MODE="660", GROUP="plugdev", RUN+="/usr/bin/dbus-send --system /de/fraunhofer/iis/Flexiband de.fraunhofer.iis.Flexiband.DeviceAdded"
+KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="remove", ENV{PRODUCT}=="27ae/1102/100", RUN+="/usr/bin/dbus-send --system /de/fraunhofer/iis/Flexiband de.fraunhofer.iis.Flexiband.DeviceRemoved"
+# GOOSE2 S-Band
+KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="add", ATTR{idVendor}=="27ae", ATTR{idProduct}=="1103", MODE="660", GROUP="plugdev", RUN+="/usr/local/bin/upload_fx3.sh /etc/Teleorbit/goose2.img"
+KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="add", ATTR{idVendor}=="27ae", ATTR{idProduct}=="1104", MODE="660", GROUP="plugdev", RUN+="/usr/bin/dbus-send --system /de/fraunhofer/iis/Flexiband de.fraunhofer.iis.Flexiband.DeviceAdded"
+KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="remove", ENV{PRODUCT}=="27ae/1104/100", RUN+="/usr/bin/dbus-send --system /de/fraunhofer/iis/Flexiband de.fraunhofer.iis.Flexiband.DeviceRemoved"
+# GOOSE2 E6-Band
+KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="add", ATTR{idVendor}=="27ae", ATTR{idProduct}=="1105", MODE="660", GROUP="plugdev", RUN+="/usr/local/bin/upload_fx3.sh /etc/Teleorbit/goose2.img"
+KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="add", ATTR{idVendor}=="27ae", ATTR{idProduct}=="1106", MODE="660", GROUP="plugdev", RUN+="/usr/bin/dbus-send --system /de/fraunhofer/iis/Flexiband de.fraunhofer.iis.Flexiband.DeviceAdded"
+KERNEL=="*", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ACTION=="remove", ENV{PRODUCT}=="27ae/1106/100", RUN+="/usr/bin/dbus-send --system /de/fraunhofer/iis/Flexiband de.fraunhofer.iis.Flexiband.DeviceRemoved"
