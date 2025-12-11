@@ -340,19 +340,14 @@ static int upload_fpga_alt(libusb_device_handle *dev_handle, const char *filenam
         data_reverse[i] = reverse(data[i]);
     }
 
-    struct libusb_transfer *xfr;
-    xfr = libusb_alloc_transfer(0);
-    libusb_fill_bulk_transfer(xfr, dev_handle, ENDPOINT_OUT, data_reverse, len, callbackUSBTransferComplete, NULL, 5000);
+    status = libusb_bulk_transfer(dev_handle, ENDPOINT_OUT, data_reverse, len, NULL, 5000);
 
-    if (libusb_submit_transfer(xfr) < 0) {
-        printf("ERROR: libusb_submit_transfer\n");
+    if (status) {
+        printf("ERROR: libusb_bulk_transfer\n");
+        fprintf(stderr, "%s\n", libusb_strerror((enum libusb_error)status));
         goto cleanup;
     }
 
-    if (libusb_handle_events(NULL) != LIBUSB_SUCCESS) {
-        printf("Error handle event");
-        goto cleanup;
-    }
     // Check, of FPGA is ready
     uint8_t flash_status;
     for (int t = 0; t <= 100000; t++) {
@@ -379,7 +374,6 @@ static int upload_fpga_alt(libusb_device_handle *dev_handle, const char *filenam
 exit:
     printf("Done\n");
 cleanup:
-    libusb_free_transfer(xfr);
     fclose(fp);
     libusb_release_interface(dev_handle, INTERFACE);
     libusb_claim_interface(dev_handle, INTERFACE);
@@ -417,14 +411,4 @@ static unsigned char reverse(unsigned char b) {
    b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
    b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
    return b;
-}
-
-static void callbackUSBTransferComplete(struct libusb_transfer *xfr) {
-    switch(xfr->status) {
-    case LIBUSB_TRANSFER_COMPLETED:
-        printf("Transfer Completed\n");
-        break;
-    default:
-        printf("Transfer Error\n");
-    }
 }
