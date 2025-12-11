@@ -340,13 +340,21 @@ static int upload_fpga_alt(libusb_device_handle *dev_handle, const char *filenam
         data_reverse[i] = reverse(data[i]);
     }
 
-    status = libusb_bulk_transfer(dev_handle, ENDPOINT_OUT, data_reverse, len, NULL, 5000);
+    struct timespec start, end;
 
+    clock_gettime(CLOCK_REALTIME, &start);
+    status = libusb_bulk_transfer(dev_handle, ENDPOINT_OUT, data_reverse, len, NULL, 5000);
+    clock_gettime(CLOCK_REALTIME, &end);
+
+    // time_spent = end - start
+    double time_spent = (end.tv_sec - start.tv_sec) +
+                        (end.tv_nsec - start.tv_nsec) / 1000000000.0;
     if (status) {
         printf("ERROR: libusb_bulk_transfer\n");
         fprintf(stderr, "%s\n", libusb_strerror((enum libusb_error)status));
         goto cleanup;
     }
+    printf("Transfer complete! Duration %3.2fs, Speed %3.2fMB/s\n", time_spent, (size / 1024 / 1024) / time_spent);
 
     // Check, of FPGA is ready
     uint8_t flash_status;
