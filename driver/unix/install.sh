@@ -60,11 +60,17 @@ if [ -f ${CYPRESS_CONFIG} ]; then
     fi
 
     # Insert the non-existing Innosense IDs
-    if ! grep -w $'27ae\t10A1\t\tInnosense-v1 USB 3.0 Bootloader' ${CYPRESS_CONFIG}; then
-        echo $'27ae\t10A1\t\tInnosense-v1 USB 3.0 Bootloader' >> ${CYPRESS_CONFIG}
+    if ! grep -w $'27ae\t10A1\t\tInnosense USB 3.0 Bootloader' ${CYPRESS_CONFIG}; then
+        echo $'27ae\t10A1\t\tInnosense USB 3.0 Bootloader' >> ${CYPRESS_CONFIG}
     fi
-    if ! grep -w $'27ae\t10A2\t\tInnosense-v1 USB 3.0' ${CYPRESS_CONFIG}; then
-        echo $'27ae\t10A2\t\tInnosense-v1 USB 3.0' >> ${CYPRESS_CONFIG}
+    if ! grep -w $'27ae\t10A2\t\tInnosense USB 3.0' ${CYPRESS_CONFIG}; then
+        echo $'27ae\t10A2\t\tInnosense USB 3.0' >> ${CYPRESS_CONFIG}
+    fi
+    if ! grep -w $'27ae\t10A3\t\tInnosense 50 USB 3.0 Bootloader' ${CYPRESS_CONFIG}; then
+        echo $'27ae\t10A3\t\tInnosense 50 USB 3.0 Bootloader' >> ${CYPRESS_CONFIG}
+    fi
+    if ! grep -w $'27ae\t10A4\t\tInnosense 50 USB 3.0' ${CYPRESS_CONFIG}; then
+        echo $'27ae\t10A4\t\tInnosense 50 USB 3.0' >> ${CYPRESS_CONFIG}
     fi
 
     # Re-add the closing tag </VPD>
