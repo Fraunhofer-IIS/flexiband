@@ -227,7 +227,6 @@ static int show_fpga_info(libusb_device_handle *dev_handle, bool flexiband2_api)
         goto err_ret;
         break;
     }
-    printf("Done!\n");
 
     printf("Read FPGA info...\n");
 
