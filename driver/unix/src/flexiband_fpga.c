@@ -230,7 +230,15 @@ static int show_fpga_info(libusb_device_handle *dev_handle, bool flexiband2_api)
     printf("Done!\n");
 
     printf("Read FPGA info...\n");
+
     uint8_t fpga_register;
+    unsigned char fpga_variant[4];
+    fpga_register = flexiband2_api ? 0x04: 0x04; //TODO: check flexiband api
+    status = libusb_control_transfer(dev_handle, VENDOR_IN, 0x03, fpga_register, 0x00, fpga_variant, sizeof(fpga_variant), 1000);
+    if (status < 0) {
+        fprintf(stderr, "Error: Read FPGA variant\n%s\n", libusb_strerror((enum libusb_error)status));
+        goto err_ret;
+    }
     uint16_t build_number;
     fpga_register = flexiband2_api ? 0x03: 0x01;
     status = libusb_control_transfer(dev_handle, VENDOR_IN, 0x03, fpga_register, 0x00, (unsigned char*)&build_number, sizeof(build_number), 1000);
@@ -253,6 +261,9 @@ static int show_fpga_info(libusb_device_handle *dev_handle, bool flexiband2_api)
         goto err_ret;
     }
 
+    printf("  Variant: %d.%d.%d (", fpga_variant[0], fpga_variant[1], fpga_variant[2]);
+    for(uint8_t i = 0; i < fpga_variant[0]; i++) {printf("I"); }
+    printf("-%d%c)\n", fpga_variant[1], fpga_variant[2] + 'a');
     printf("  Build number: %i\n", be16toh(build_number));
     printf("  Git hash: %08x\n", be32toh(git_hash));
     struct tm year_2000 = { 0, 0, 0, 1, 0, 100, 0, 0, 0 };
