@@ -171,7 +171,7 @@ err_dev:
 err_usb:
     libusb_exit(ctx);
 err_ret:
-    return status;
+    return (status < 0) ? status : EXIT_SUCCESS;
 }
 
 static const uint8_t VENDOR_IN = LIBUSB_ENDPOINT_IN | LIBUSB_RECIPIENT_DEVICE | LIBUSB_REQUEST_TYPE_VENDOR;
