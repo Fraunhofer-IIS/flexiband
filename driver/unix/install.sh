@@ -83,6 +83,7 @@ mkdir -p ${TELEORBIT_IMG_PATH}
 cp flexiband.img ${TELEORBIT_IMG_PATH}/flexiband.img
 cp teleorbit.img ${TELEORBIT_IMG_PATH}/teleorbit.img
 cp goose2.img ${TELEORBIT_IMG_PATH}/goose2.img
+cp innosense.img ${TELEORBIT_IMG_PATH}/innosense.img
 cp 80-flexiband.rules /etc/udev/rules.d/80-flexiband.rules
 cp 80-teleorbit.rules /etc/udev/rules.d/80-teleorbit.rules
 cp 80-innosense.rules /etc/udev/rules.d/80-innosense.rules
