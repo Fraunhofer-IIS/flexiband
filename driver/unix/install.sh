@@ -91,10 +91,7 @@ cp src/fwload_fx3 ${TELEORBIT_BIN_PATH}/fwload_fx3
 cp upload_fx3.sh ${TELEORBIT_BIN_PATH}/upload_fx3.sh
 cp src/libcyusb.so ${TELEORBIT_LIB_PATH}/libcyusb.so
 cp src/flexiband_fpga ${TELEORBIT_BIN_PATH}/flexiband_fpga
-cp flexiband2_rec_I-1m.bit ${TELEORBIT_BIN_PATH}/flexiband2_rec_I-1m.bit
-cp flexiband2_setup.sh ${TELEORBIT_BIN_PATH}/flexiband2_setup.sh
 
 chmod +x ${TELEORBIT_BIN_PATH}/fwload_fx3
 chmod +x ${TELEORBIT_BIN_PATH}/upload_fx3.sh
 chmod +x ${TELEORBIT_BIN_PATH}/flexiband_fpga
-chmod +x ${TELEORBIT_BIN_PATH}/flexiband2_setup.sh
